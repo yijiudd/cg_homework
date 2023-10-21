@@ -1,0 +1,99 @@
+<html>
+<head>
+ <title>House Homework</title>
+ <meta name="author" content="YIJIU (5123FG15)" />
+ <script>
+   let canvas;    // DOM object corresponding to the canvas
+   let graphics;  // 2D graphics context for drawing to the canvas
+   // Drawing function
+   function draw() {
+    //draw the roof
+    graphics.beginPath()
+    graphics.moveTo(250, 100)
+    graphics.lineTo(150, 200)
+    graphics.lineTo(350, 200)
+    graphics.closePath()
+    graphics.stroke()
+    //draw the house
+    graphics.beginPath()
+    graphics.moveTo(150, 200)
+    graphics.lineTo(150, 350)
+    graphics.lineTo(350, 350)
+    graphics.lineTo(350, 200)
+    graphics.closePath()
+    graphics.stroke()
+    //draw the door
+    graphics.beginPath()
+    graphics.moveTo(250, 350)
+    graphics.lineTo(250, 275)
+    graphics.lineTo(300, 275)
+    graphics.lineTo(300, 350)
+    graphics.closePath()
+    graphics.stroke()
+    //draw the window
+    graphics.beginPath()
+    graphics.moveTo(175, 250)
+    graphics.lineTo(175, 300)
+    graphics.lineTo(225, 300)
+    graphics.lineTo(225, 250)
+    graphics.closePath()
+    graphics.stroke()
+    //draw window line
+    graphics.beginPath()
+    graphics.moveTo(200, 250)
+    graphics.lineTo(200, 300)
+    graphics.moveTo(175, 275)
+    graphics.lineTo(225, 275)
+    graphics.closePath()
+    graphics.stroke()
+    //draw door knob
+    graphics.beginPath()
+    graphics.arc(290, 312, 3, 0, 2 * Math.PI)
+    graphics.closePath()
+    graphics.stroke()
+    //draw the front wall
+    graphics.beginPath()
+    graphics.moveTo(120, 320)
+    graphics.lineTo(220, 320)
+    graphics.lineTo(220, 380)
+    graphics.lineTo(120, 380)
+    graphics.closePath()
+    graphics.fillStyle = "gray"
+    graphics.fill()
+    graphics.beginPath()
+    graphics.moveTo(250, 320)
+    graphics.lineTo(340, 320)
+    graphics.lineTo(340, 380)
+    graphics.lineTo(250, 380)
+    graphics.closePath()
+    graphics.fillStyle = "gray"
+    graphics.fill()
+    graphics.beginPath()
+    graphics.moveTo(120, 320)
+    graphics.lineTo(150, 300)
+    graphics.lineTo(150, 320)
+    graphics.closePath()
+    graphics.fillStyle = "gray"
+    graphics.fill()
+    graphics.beginPath()
+    graphics.moveTo(340, 320)
+    graphics.lineTo(350, 300)
+    graphics.lineTo(350, 360)
+    graphics.lineTo(340, 380)
+    graphics.closePath()
+    graphics.fillStyle = "gray"
+    graphics.fill()
+   }
+   // Initialization function
+   function init() {
+      canvas   = document.getElementById("myCanvas");
+      graphics = canvas.getContext("2d");
+      draw(); // Draw onto the canvas
+   }
+   window.onload = init; // Runs when window is loaded
+ </script>
+</head>
+<body>
+ <canvas width="800" height="600" id="myCanvas"></canvas>
+</body>
+</html>
