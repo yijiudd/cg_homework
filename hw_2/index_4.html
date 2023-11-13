@@ -1,0 +1,321 @@
+<html>
+  <head>
+    <title>Minimal WebGL Example</title>
+  </head>
+  <body>
+    <canvas id="glCanvas" style="width: 400px; height: 400px" />
+    <!-- type="notjs" makes it not get identified as javascript. -->
+    <script id="vertex-shader" type="notjs">
+        #version 300 es
+        in vec4 pos;
+        uniform mat4 u_matrix;
+        out float v_depth;
+
+
+        void main() {
+           float angle = radians(60.0); // Adjust the angle as needed
+      mat4 rotation = mat4(
+          cos(angle), 0.0, sin(angle), 0.0,
+          0.0, 1.0, 0.0, 0.0,
+          -sin(angle), 0.0, cos(angle), 0.0,
+          0.0, 0.0, 0.0, 1.0
+      );
+
+      gl_Position = u_matrix * rotation * pos;
+           v_depth = gl_Position.z;
+        }
+    </script>
+    <script id="fragment-shader" type="notjs">
+      #version 300 es
+      precision mediump float;
+      in float v_depth;
+      out vec4 color_out;
+      void main() {
+       color_out = vec4(0,(1.0 - v_depth), (1.0 - v_depth),1);
+      }
+    </script>
+    <script type="text/javascript">
+      function createProgram(gl, vertexSrc, fragmentSrc) {
+        let vshd = gl.createShader(gl.VERTEX_SHADER);
+        gl.shaderSource(vshd, vertexSrc);
+        gl.compileShader(vshd);
+        if (!gl.getShaderParameter(vshd, gl.COMPILE_STATUS))
+          throw new Error(
+            "Unable to compile shader: " + gl.getShaderInfoLog(vshd)
+          );
+        let fshd = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(fshd, fragmentSrc);
+        gl.compileShader(fshd);
+        if (!gl.getShaderParameter(fshd, gl.COMPILE_STATUS))
+          throw new Error(
+            "Unable to compile shader: " + gl.getShaderInfoLog(fshd)
+          );
+        let prog = gl.createProgram();
+        gl.attachShader(prog, vshd);
+        gl.attachShader(prog, fshd);
+        gl.linkProgram(prog);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS))
+          throw new Error(
+            "Unable to link program: " + gl.getProgramInfoLog(prog)
+          );
+        return prog;
+      }
+
+      function init() {
+        var c = document.getElementById("glCanvas");
+        var gl = c.getContext("webgl2");
+        if (!gl) throw new Error("WebGL unsupported!");
+        gl.enable(gl.DEPTH_TEST);
+        // Clear screen
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        var vertexPosBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexPosBuffer);
+        var vertices = [
+          // Top pyramid
+          0, 1, 0, -1, 0, 1, 1, 0, 1, 1, 0, -1, -1, 0, -1, -1, 0, 1,
+          // Bottom pyramid
+          0, -1, 0, -1, 0, -1, 1, 0, -1, 1, 0, 1, -1, 0, 1, -1, 0, -1,
+        ];
+        gl.bufferData(
+          gl.ARRAY_BUFFER,
+          new Float32Array(vertices),
+          gl.STATIC_DRAW
+        );
+        const indices = [
+          // Top pyramid
+          0,
+          1,
+          2, // Triangle 1
+          0,
+          2,
+          3, // Triangle 2
+          0,
+          3,
+          4, // Triangle 3
+          0,
+          4,
+          5, // Triangle 4
+          0,
+          5,
+          1, // Triangle 5
+          // Bottom pyramid
+          6,
+          7,
+          8, // Triangle 6
+          6,
+          8,
+          9, // Triangle 7
+          6,
+          9,
+          10, // Triangle 8
+          6,
+          10,
+          11, // Triangle 9
+          6,
+          11,
+          7, // Triangle10
+        ];
+        const indexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        gl.bufferData(
+          gl.ELEMENT_ARRAY_BUFFER,
+          new Uint16Array(indices),
+          gl.STATIC_DRAW
+        );
+
+        // Create our shader program
+        var vs = document.querySelector("#vertex-shader").text.trim();
+        var fs = document.querySelector("#fragment-shader").text.trim();
+        var program = createProgram(gl, vs, fs);
+        gl.useProgram(program);
+
+        // Get and set vertex attribute
+        program.vertexPosAttrib = gl.getAttribLocation(program, "pos");
+        var matrixLocatuion = gl.getUniformLocation(program, "u_matrix");
+        gl.enableVertexAttribArray(program.vertexPosAttrib);
+        gl.vertexAttribPointer(
+          program.vertexPosAttrib,
+          3,
+          gl.FLOAT,
+          false,
+          0,
+          0
+        );
+        var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+        var zNear = 1;
+        var zFar = 2000;
+        var fieldOfViewRadians = degToRad(55);
+        var matrix = m4.perspective(fieldOfViewRadians, aspect, zNear, zFar);
+        //var rotation = [degToRad(0), degToRad(40), degToRad(320)];
+    //    matrix = m4.xRotate(matrix, rotation[0]);
+        matrix = m4.translate(matrix, 0, 0, -3.5);
+        gl.uniformMatrix4fv(matrixLocatuion, false, matrix);
+
+        // Draw triangles
+        gl.drawElements(
+          gl.TRIANGLE_STRIP,
+          indices.length,
+          gl.UNSIGNED_SHORT,
+          0
+        );
+      }
+      function degToRad(d) {
+        return (d * Math.PI) / 180;
+      }
+
+      //m4
+      var m4 = {
+        perspective: function (fieldOfViewInRadians, aspect, near, far) {
+          var f = Math.tan(Math.PI * 0.5 - 0.5 * fieldOfViewInRadians);
+          var rangeInv = 1.0 / (near - far);
+
+          return [
+            f / aspect,
+            0,
+            0,
+            0,
+            0,
+            f,
+            0,
+            0,
+            0,
+            0,
+            (near + far) * rangeInv,
+            -1,
+            0,
+            0,
+            near * far * rangeInv * 2,
+            0,
+          ];
+        },
+
+        projection: function (width, height, depth) {
+          // Note: This matrix flips the Y axis so 0 is at the top.
+          return [
+            2 / width,
+            0,
+            0,
+            0,
+            0,
+            -2 / height,
+            0,
+            0,
+            0,
+            0,
+            2 / depth,
+            0,
+            -1,
+            1,
+            0,
+            1,
+          ];
+        },
+
+        multiply: function (a, b) {
+          var a00 = a[0 * 4 + 0];
+          var a01 = a[0 * 4 + 1];
+          var a02 = a[0 * 4 + 2];
+          var a03 = a[0 * 4 + 3];
+          var a10 = a[1 * 4 + 0];
+          var a11 = a[1 * 4 + 1];
+          var a12 = a[1 * 4 + 2];
+          var a13 = a[1 * 4 + 3];
+          var a20 = a[2 * 4 + 0];
+          var a21 = a[2 * 4 + 1];
+          var a22 = a[2 * 4 + 2];
+          var a23 = a[2 * 4 + 3];
+          var a30 = a[3 * 4 + 0];
+          var a31 = a[3 * 4 + 1];
+          var a32 = a[3 * 4 + 2];
+          var a33 = a[3 * 4 + 3];
+          var b00 = b[0 * 4 + 0];
+          var b01 = b[0 * 4 + 1];
+          var b02 = b[0 * 4 + 2];
+          var b03 = b[0 * 4 + 3];
+          var b10 = b[1 * 4 + 0];
+          var b11 = b[1 * 4 + 1];
+          var b12 = b[1 * 4 + 2];
+          var b13 = b[1 * 4 + 3];
+          var b20 = b[2 * 4 + 0];
+          var b21 = b[2 * 4 + 1];
+          var b22 = b[2 * 4 + 2];
+          var b23 = b[2 * 4 + 3];
+          var b30 = b[3 * 4 + 0];
+          var b31 = b[3 * 4 + 1];
+          var b32 = b[3 * 4 + 2];
+          var b33 = b[3 * 4 + 3];
+          return [
+            b00 * a00 + b01 * a10 + b02 * a20 + b03 * a30,
+            b00 * a01 + b01 * a11 + b02 * a21 + b03 * a31,
+            b00 * a02 + b01 * a12 + b02 * a22 + b03 * a32,
+            b00 * a03 + b01 * a13 + b02 * a23 + b03 * a33,
+            b10 * a00 + b11 * a10 + b12 * a20 + b13 * a30,
+            b10 * a01 + b11 * a11 + b12 * a21 + b13 * a31,
+            b10 * a02 + b11 * a12 + b12 * a22 + b13 * a32,
+            b10 * a03 + b11 * a13 + b12 * a23 + b13 * a33,
+            b20 * a00 + b21 * a10 + b22 * a20 + b23 * a30,
+            b20 * a01 + b21 * a11 + b22 * a21 + b23 * a31,
+            b20 * a02 + b21 * a12 + b22 * a22 + b23 * a32,
+            b20 * a03 + b21 * a13 + b22 * a23 + b23 * a33,
+            b30 * a00 + b31 * a10 + b32 * a20 + b33 * a30,
+            b30 * a01 + b31 * a11 + b32 * a21 + b33 * a31,
+            b30 * a02 + b31 * a12 + b32 * a22 + b33 * a32,
+            b30 * a03 + b31 * a13 + b32 * a23 + b33 * a33,
+          ];
+        },
+
+        translation: function (tx, ty, tz) {
+          return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, tx, ty, tz, 1];
+        },
+
+        xRotation: function (angleInRadians) {
+          var c = Math.cos(angleInRadians);
+          var s = Math.sin(angleInRadians);
+
+          return [1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, 0, 1];
+        },
+
+        yRotation: function (angleInRadians) {
+          var c = Math.cos(angleInRadians);
+          var s = Math.sin(angleInRadians);
+
+          return [c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1];
+        },
+
+        zRotation: function (angleInRadians) {
+          var c = Math.cos(angleInRadians);
+          var s = Math.sin(angleInRadians);
+
+          return [c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+        },
+
+        scaling: function (sx, sy, sz) {
+          return [sx, 0, 0, 0, 0, sy, 0, 0, 0, 0, sz, 0, 0, 0, 0, 1];
+        },
+
+        translate: function (m, tx, ty, tz) {
+          return m4.multiply(m, m4.translation(tx, ty, tz));
+        },
+
+        xRotate: function (m, angleInRadians) {
+          return m4.multiply(m, m4.xRotation(angleInRadians));
+        },
+
+        yRotate: function (m, angleInRadians) {
+          return m4.multiply(m, m4.yRotation(angleInRadians));
+        },
+
+        zRotate: function (m, angleInRadians) {
+          return m4.multiply(m, m4.zRotation(angleInRadians));
+        },
+
+        scale: function (m, sx, sy, sz) {
+          return m4.multiply(m, m4.scaling(sx, sy, sz));
+        },
+      };
+      window.onload = init;
+    </script>
+  </body>
+</html>
